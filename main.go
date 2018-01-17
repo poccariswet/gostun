@@ -2,10 +2,24 @@ package main
 
 import (
 	"log"
+	"net"
+)
+
+const (
+	DefaultName   = "stun_client"
+	DefaultServer = "stun.l.google.com:19302"
 )
 
 type Client struct {
-	StunName string
+	serverAddr string
+	StunName   string
+	conn       net.PacketConn
+}
+
+type Host struct {
+	family uint16
+	port   uint16
+	ip     string
 }
 
 func main() {
@@ -26,6 +40,21 @@ func (c *Client) SetName(name string) {
 	c.StunName = name
 }
 
-func (c *client) NatHost() {
+func (c *Client) SetServer(name string) {
+	c.serverAddr = name
+}
 
+func (c *client) NatHost() (NAT, *Host, error) {
+	c.SetServer(DefaultServer)
+	serverUDPAddr, err := net.ResolveUDPAddr("udp", c.serverAddr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	co := c.conn
+	co, err = net.ListenUDP("udp", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer co.Close()
 }
