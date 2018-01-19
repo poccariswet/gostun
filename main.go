@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
@@ -17,16 +18,21 @@ type Client struct {
 }
 
 type Host struct {
-	family uint16
-	port   uint16
-	ip     string
+	ip string
 }
+
+type NAT int
 
 func main() {
 	client := NewClient()
-	nat, host, err := client.NatHost()
+	Nat, Host, err := client.GetNatHost()
 	if err != nil {
 		log.Print(err)
+	}
+
+	fmt.Println("NAT:", Nat)
+	if host != nil {
+		fmt.Println("External IP: %v", Host.IP())
 	}
 }
 
@@ -44,17 +50,25 @@ func (c *Client) SetServer(name string) {
 	c.serverAddr = name
 }
 
-func (c *client) NatHost() (NAT, *Host, error) {
+func (c *Client) GetNatHost() (NAT, *Host, error) {
 	c.SetServer(DefaultServer)
-	serverUDPAddr, err := net.ResolveUDPAddr("udp", c.serverAddr)
+	addr, err := net.ResolveUDPAddr("udp", c.serverAddr)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	co := c.conn
-	co, err = net.ListenUDP("udp", nil)
+	if co != nil {
+		co, err = net.ListenUDP("udp", nil)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	defer co.Close()
+
+	resp, err := c.SendReq(conn, addr)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer co.Close()
+
 }
