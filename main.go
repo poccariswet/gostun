@@ -29,8 +29,7 @@ func main() {
 	if err != nil {
 		log.Print(err)
 	}
-
-	fmt.Println("NAT:", Nat)
+	_ = Nat
 	if host != nil {
 		fmt.Println("External IP: %v", Host.IP())
 	}
