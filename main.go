@@ -121,4 +121,18 @@ func (c *Client) readUntilClosed() {
 
 	m := new(Message)
 	m.Raw = make([]byte, 1024)
+
+	for {
+		select {
+		case <-c.close():
+			return
+		default:
+		}
+		_, err := m.ReadFrom(c.conn)
+		if err == nil {
+			if Err := c.agent.Process(m); Err == ErrAgentClosed {
+				return
+			}
+		}
+	}
 }
