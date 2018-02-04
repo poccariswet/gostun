@@ -19,7 +19,16 @@ type Client struct {
 }
 
 type Message struct {
-	Raw []byte
+	Type          MessageType
+	Length        uint32
+	TransactionID [TransactionIDSize]byte
+	Attributes    Attributes
+	Raw           []byte
+}
+
+type MessageType struct {
+	Method Method       // binding
+	Class  MessageClass // request
 }
 
 type Connection interface {
@@ -62,6 +71,7 @@ func (m *Message) Decode() error {
 	}
 
 	var (
+		head        = bin.Uint16(buf[0:2])
 		size        = int(bin.Uint16(buf[2:4]))
 		magiccookie = bin.Uint32(buf[4:8])
 		fullMsg     = messageHeaderSize + size
@@ -78,6 +88,32 @@ func (m *Message) Decode() error {
 	}
 
 	//copy header data
+	m.Type.ReadValue(head)
 
 	return nil
+}
+
+const (
+	firstBit  = 0x1
+	secondBit = 0x2
+
+	c0Bit = firstBit
+	c1Bit = secondBit
+
+	C0Shift = 4
+	C1Shift = 7
+)
+
+// RFC5389 Page10 Message Type field
+type MessageClass byte
+
+const (
+	RequestClass         MessageClass = 0x00 // 0b00
+	IndicationClass      MessageClass = 0x01 // 0b01
+	SuccessResponseClass MessageClass = 0x02 // 0b10
+	ErrorResponseClass   MessageClass = 0x03 // 0b11
+)
+
+func (t *MessageType) ReadValue(v uint16) {
+
 }

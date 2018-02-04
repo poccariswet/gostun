@@ -9,9 +9,12 @@ import (
 )
 
 const (
-	defaultAddr       = "stun.l.google.com:19302"
-	TransactionIDSize = 12 // 96 bit
-	defaultTime       = time.Millisecond * 100
+	defaultAddr         = "stun.l.google.com:19302"
+	TransactionIDSize   = 12 // 96 bit
+	defaultTime         = time.Millisecond * 100
+	stunMessageHeader   = 20
+	magicCookie         = 0x2112A442
+	stunAttributeHeader = 4
 )
 
 type Client struct {
@@ -120,7 +123,7 @@ func (c *Client) readUntilClosed() {
 	defer c.wg.Done()
 
 	m := new(Message)
-	m.Raw = make([]byte, 1024)
+	m.Raw = make([]byte, 1024) // Message struct のRawに1024バイトの空きを作る
 
 	for {
 		select {
@@ -128,11 +131,22 @@ func (c *Client) readUntilClosed() {
 			return
 		default:
 		}
-		_, err := m.ReadFrom(c.conn)
+		_, err := m.ReadFrom(c.conn) // m.Raw
 		if err == nil {
 			if Err := c.agent.Process(m); Err == ErrAgentClosed {
 				return
 			}
 		}
 	}
+}
+
+func (m *Message) ReadFrom(r io.Reader) (int64, error) {
+	tBuf := m.Raw[:cap(m.Raw)]
+
+	n, err := r.Read(tBuf)
+	if err != nil {
+		return int64(n), err
+	}
+	m.Raw = tBuf[:n]
+	return int64(n), m.Decode()
 }
