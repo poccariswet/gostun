@@ -94,6 +94,13 @@ func (m *Message) Decode() error {
 }
 
 const (
+	methodABits = 0xf   // 0b0000000000001111
+	methodBBits = 0x70  // 0b0000000001110000
+	methodDBits = 0xf80 // 0b0000111110000000
+
+	methodBShift = 1
+	methodDShift = 2
+
 	firstBit  = 0x1
 	secondBit = 0x2
 
@@ -114,6 +121,19 @@ const (
 	ErrorResponseClass   MessageClass = 0x03 // 0b11
 )
 
-func (t *MessageType) ReadValue(v uint16) {
+type Method uint16
 
+//uint16 -> MessageType
+func (t *MessageType) ReadValue(v uint16) {
+	// Decoding Class
+	c0 := (v >> C0Shift) & c0Bit
+	c1 := (v >> C1Shift) & c1Bit
+	class := c0 + c1
+	t.Class = MessageClass(class)
+	// Decoding Method
+	a := v & methodABits                   // A(M0-M3)
+	b := (v >> methodBShift) & methodBBits // B(M4-M6)
+	d := (v >> methodDShift) & methodDBits // D(M7-M11)
+	m := a + b + d
+	t.Method = Method(m)
 }
