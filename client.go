@@ -12,6 +12,12 @@ type Client struct {
 	conn        Connection
 	TimeoutRate time.Duration
 	wg          sync.WaitGroup
+	close       chan struct{}
+	agent       messageClient
+}
+
+type messageClient interface {
+	Process(*Message) error
 }
 
 type Connection interface {
@@ -36,5 +42,28 @@ func NewClient(conn net.Conn) (*Client, error) {
 		TimeoutRate: defaultTimeoutRate,
 	}
 
+	c.wg.ADD(2)
+	go c.readUntil()
+
 	return c, nil
+}
+
+func (c *Client) readUntil() {
+	defer c.wg.Done()
+
+	m := new(Message)
+	m.Raw = make([]byte, 1024)
+	for {
+		select {
+		case <-c.close:
+			return
+		default:
+		}
+		_, err := m.ReadConn(c.conn)
+		if err == nil {
+			if Err := c.agent.Process(m); Err != nil {
+				return
+			}
+		}
+	}
 }
