@@ -15,3 +15,11 @@ const (
 	SuccessResponse MessageClass = 0x02 // 0b10
 	ErrorResponse   MessageClass = 0x03 // 0b11
 )
+
+type Message struct {
+	Type          MessageType
+	Length        uint32
+	TransactionID [TransactionIDSize]byte
+	Attributes    Attributes
+	Raw           []byte
+}
