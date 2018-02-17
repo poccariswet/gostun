@@ -1,5 +1,7 @@
 package gostun
 
+import "io"
+
 const (
 	magicCookie       = 0x2112A442
 	TransactionIDSize = 12 // 96 bit
@@ -22,4 +24,16 @@ type Message struct {
 	TransactionID [TransactionIDSize]byte
 	Attributes    Attributes
 	Raw           []byte
+}
+
+func (m *Message) ReadConn(r io.Reader) (int, error) {
+	raw := m.Raw
+
+	n, err := r.Read(raw)
+	if err != nil {
+		return n, err
+	}
+
+	m.Raw = raw[:n]
+	return n, m.Decode()
 }
