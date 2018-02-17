@@ -42,7 +42,7 @@ func NewClient(conn net.Conn) (*Client, error) {
 		TimeoutRate: defaultTimeoutRate,
 	}
 
-	c.wg.ADD(2)
+	c.wg.Add(1)
 	go c.readUntil()
 
 	return c, nil
