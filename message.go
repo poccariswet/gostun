@@ -1,6 +1,9 @@
 package gostun
 
 import (
+	"encoding/binary"
+	"errors"
+	"fmt"
 	"io"
 )
 
@@ -46,4 +49,31 @@ func (m *Message) ReadConn(r io.Reader) (int, error) {
 	m.Raw = raw[:n]
 	//	return n, m.Decode()
 	return n, nil
+}
+
+func (m *Message) Decode() error {
+	header := m.Raw
+	mtype := binary.BigEndian.Uint16(header[0:2])   //STUN Message type
+	mlength := binary.BigEndian.Uint16(header[2:4]) //STUN Message length
+	mcookie := binary.BigEndian.Uint16(header[4:8]) //Magic Cookie
+	fullHeader := messageHeaderSize + int(mlength)  //len(m.Raw)
+
+	if mcookie != magicCookie {
+		err := fmt.Sprintf("%x is invalid value magicCookie is %x\n", mcookie, magicCookie)
+		return errors.New(err)
+	}
+
+	if len(header) < fullHeader {
+		err := fmt.Sprintf("this length %d is less than %d", len(header), fullHeader)
+		return errors.New(err)
+	}
+
+	m.Type.ReadValue(mtype)    // copy STUN message type
+	m.Length = uint32(mlength) // copy STUN message type
+
+	return nil
+}
+
+func (m *Message) ReadValue(v uint16) {
+
 }
