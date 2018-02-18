@@ -74,6 +74,32 @@ func (m *Message) Decode() error {
 	return nil
 }
 
-func (m *Message) ReadValue(v uint16) {
+const (
+	bic0    = 0x1
+	bic1    = 0x2
+	shiftc0 = 4
+	shiftc1 = 7
+)
+
+/*
+    0                 1
+    2  3  4 5 6 7 8 9 0 1 2 3 4 5
+
+   +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+   |M |M |M|M|M|C|M|M|M|C|M|M|M|M|
+   |11|10|9|8|7|1|6|5|4|0|3|2|1|0|
+   +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+									7					4
+   Format of STUN Message Type Field
+
+
+*/
+
+func (mt *MessageType) ReadValue(v uint16) {
+	// difine class
+	c0 := (v >> shiftc0) & bitc0
+	c1 := (v >> shiftc1) & bitc1
+	Class := c0 + c1
+	mt.Class = MessageClass(Class)
 
 }
