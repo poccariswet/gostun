@@ -79,6 +79,12 @@ const (
 	bic1    = 0x2
 	shiftc0 = 4
 	shiftc1 = 7
+
+	methodshift1 = 1
+	methodshift2 = 2
+	mbit1        = 0xf   //M0~M3=>0b0000000000001111
+	mbit2        = 0x70  //M4~M6=>0b0000000001110000
+	mbit3        = 0xf80 //M7~M11=>0b00011111000000
 )
 
 /*
@@ -89,7 +95,7 @@ const (
    |M |M |M|M|M|C|M|M|M|C|M|M|M|M|
    |11|10|9|8|7|1|6|5|4|0|3|2|1|0|
    +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
-									7					4
+                  7       4
    Format of STUN Message Type Field
 
 
@@ -101,5 +107,13 @@ func (mt *MessageType) ReadValue(v uint16) {
 	c1 := (v >> shiftc1) & bitc1
 	Class := c0 + c1
 	mt.Class = MessageClass(Class)
+
+	// method
+	m0m3 := v & mbit1
+	m4m6 := (v >> methodshift1) & mbit2
+	m7m11 := (v >> methodshift2) & mbit3
+
+	m := m0m3 + m4m6 + m7m11
+	mt.Method = Method(m)
 
 }
