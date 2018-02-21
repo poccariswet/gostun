@@ -1,4 +1,3 @@
-//package gostun
 package gostun
 
 import (

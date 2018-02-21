@@ -11,7 +11,7 @@ const (
 	magicCookie       = 0x2112A442
 	TransactionIDSize = 12 // 96 bit
 	messageHeader     = 20
-	attributeHeader   = 4
+	attributeHeader   = 4 // type and length
 )
 
 type MessageClass byte
@@ -25,7 +25,7 @@ const (
 	ErrorResponse   MessageClass = 0x03 // 0b11
 )
 
-// MessageType is STUN Message Type Field.
+// STUN Message Type Field.
 type MessageType struct {
 	Method Method       // binding
 	Class  MessageClass // request
@@ -36,6 +36,7 @@ type Message struct {
 	Type          MessageType
 	Length        uint32
 	TransactionID [TransactionIDSize]byte
+	Attributes    Attributes
 }
 
 func (m *Message) ReadConn(r io.Reader) (int, error) {
@@ -51,12 +52,50 @@ func (m *Message) ReadConn(r io.Reader) (int, error) {
 	return n, nil
 }
 
+/*
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |         Type                  |            Length             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                         Value (variable)                ....
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                         Format of STUN Attributes
+*/
+
+type AttributeType uint16
+
+type AttributeField struct {
+	Type   AttributeType
+	Length uint16 // ignored while encoding
+	Value  []byte
+}
+
+type Attributes []AttributeField
+
+// Comprehension-required range (0x0000-0x7FFF): page 43
+const (
+	MAPPED_ADDRESS     AttributeType = 0x0001
+	USERNAME           AttributeType = 0x0006
+	MESSAGE_INTEGRITY  AttributeType = 0x0008
+	ERROR_CODE         AttributeType = 0x0009
+	UNKNOWN_ATTRIBUTES AttributeType = 0x000A
+	REALM              AttributeType = 0x0014
+	NONCE              AttributeType = 0x0015
+	XOR_MAPPED_ADDRESS AttributeType = 0x0020
+
+	SOFTWARE         AttributeType = 0x8022
+	ALTERNATE_SERVER AttributeType = 0x8023
+	FINGERPRINT      AttributeType = 0x8028
+)
+
 func (m *Message) Decode() error {
 	header := m.Raw
 	mtype := binary.BigEndian.Uint16(header[0:2])   //STUN Message type
 	mlength := binary.BigEndian.Uint16(header[2:4]) //STUN Message length
 	mcookie := binary.BigEndian.Uint16(header[4:8]) //Magic Cookie
-	fullHeader := messageHeaderSize + int(mlength)  //len(m.Raw)
+	fullHeader := messageHeader + int(mlength)      //len(m.Raw)
 
 	if mcookie != magicCookie {
 		err := fmt.Sprintf("%x is invalid value magicCookie is %x\n", mcookie, magicCookie)
@@ -68,15 +107,47 @@ func (m *Message) Decode() error {
 		return errors.New(err)
 	}
 
-	m.Type.ReadValue(mtype)    // copy STUN message type
-	m.Length = uint32(mlength) // copy STUN message type
+	m.Type.ReadValue(mtype)                           // copy STUN message type
+	m.Length = uint32(mlength)                        // copy STUN message type
+	copy(m.TransactionID[:], header[8:messageHeader]) // copy STUN Transaction ID (96 bits|12 byte)
+
+	m.Attributes = m.Attributes[:0]
+	buf := header[messageHeader:fullHeader]
+	attrsize := 0 // initialize
+
+	for attrsize < int(mlength) {
+		// github.com/soeyusuke/note/stun => STUN Attributes
+		attr := AttributeField{
+			Type:   AttributeType(binary.BigEndian.Uint16(buf[0:2])), //Attribute type - first 2byte
+			Length: binary.BigEndian.Uint16(buf[2:4]),                // Attributes Length - next 2byte
+		}
+
+		if len(buf) < attributeHeader {
+			err := fmt.Sprintf("buf(%d) is less than attributeHeader(%d)", len(buf), attributeHeader)
+			return errors.New(err)
+		}
+
+		alen := attr.PaddingValue() // padding
+		attrsize += attributeHeader // increment attrsize 4byte(type + length)
+		buf = buf[attributeHeader:] // adjust buf to Value
+		if len(buf) < alen {
+			err := fmt.Sprintf("buf length(%d) is less than value size is expected(%d)", len(buf), alen)
+			return errors.New(err)
+		}
+
+		attr.Value = buf[:int(attr.Length)]
+		attrsize += alen // increment attrsize Value size
+		buf = buf[alen:] // adjust buf Attribute Field
+
+		m.Attributes = append(m.Attributes, attr)
+	}
 
 	return nil
 }
 
 const (
-	bic0    = 0x1
-	bic1    = 0x2
+	bitc0   = 0x1
+	bitc1   = 0x2
 	shiftc0 = 4
 	shiftc1 = 7
 
@@ -97,8 +168,6 @@ const (
    +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
                   7       4
    Format of STUN Message Type Field
-
-
 */
 
 func (mt *MessageType) ReadValue(v uint16) {
@@ -115,5 +184,18 @@ func (mt *MessageType) ReadValue(v uint16) {
 
 	m := m0m3 + m4m6 + m7m11
 	mt.Method = Method(m)
+}
 
+// Since STUN aligns attributes on 32-bit boundaries, attributes whose content
+// is not a multiple of 4 bytes are padded with 1, 2, or 3 bytes of
+// padding so that its value contains a multiple of 4 bytes.  The
+// padding bits are ignored, and may be any value.
+func (a *AttributeField) PaddingValue() int {
+	const padding = 4
+	al := int(a.Length)
+	l := padding * (al / padding)
+	if l < al {
+		l += padding
+	}
+	return l
 }
