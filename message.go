@@ -94,7 +94,7 @@ func (m *Message) Decode() error {
 	header := m.Raw
 	mtype := binary.BigEndian.Uint16(header[0:2])   //STUN Message type
 	mlength := binary.BigEndian.Uint16(header[2:4]) //STUN Message length
-	mcookie := binary.BigEndian.Uint16(header[4:8]) //Magic Cookie
+	mcookie := binary.BigEndian.Uint32(header[4:8]) //Magic Cookie
 	fullHeader := messageHeader + int(mlength)      //len(m.Raw)
 
 	if mcookie != magicCookie {
