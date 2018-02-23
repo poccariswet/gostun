@@ -58,11 +58,24 @@ func (c *Client) readUntil() {
 			return
 		default:
 		}
-		_, err := m.ReadConn(c.conn)
+		_, err := m.ReadConn(c.conn) // read and decode message
 		if err == nil {
 			if Err := c.agent.Process(m); Err != nil {
 				return
 			}
 		}
 	}
+}
+
+type transactionID [TransactionIDSize]byte
+
+// transaction in progress
+type TransactionAgent struct {
+	ID      transactionID
+	Timeout time.Time
+}
+
+type Agent struct {
+	transactions map[transactionID]TransactionAgent
+	mux          sync.Mutex
 }
