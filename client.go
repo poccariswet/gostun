@@ -64,7 +64,7 @@ func (c *Client) readUntil() {
 		}
 		_, err := m.ReadConn(c.conn) // read and decode message
 		if err == nil {
-			if Err := c.agent.Process(m); Err != nil {
+			if processErr := c.agent.Process(m); processErr != nil {
 				return
 			}
 		}
@@ -84,14 +84,27 @@ type transactionID [TransactionIDSize]byte
 type TransactionAgent struct {
 	ID      transactionID
 	Timeout time.Time
+	handler Hander // if transaction is succeed will be called
 }
 
 type AgentHandle struct {
 	handler Handler
 }
 
+// reference http.HandlerFunc
 type Handler interface {
 	HandleEvent(e EventObject)
+}
+
+type HandleFunc func(e EventObject)
+
+func (f HandleFunc) HandleEvent(e EventObject) {
+	f(e)
+}
+
+type EventObject struct {
+	Msg *Message
+	err error
 }
 
 func NewAgent() *Agent {
@@ -101,4 +114,20 @@ func NewAgent() *Agent {
 		nonHandler:   h.handler,
 	}
 	return a
+}
+
+func (a *Agent) Process(m *Message) error {
+	e := &EventObject{
+		Msg: m,
+	}
+	a.mux.Lock() // protect transaction
+	tr, ok := a.transactions[m.TransactionID]
+	delete(a.transactions, m.TransactionID) //delete maps entry
+
+	if ok {
+		tr.handler.HandleEvent(e)
+	} else if a.nonHandler != nil {
+		a.nonHandler.HandleEvent(e) // the transaction is not registered
+	}
+	return nil
 }
