@@ -41,6 +41,10 @@ func NewClient(conn net.Conn) (*Client, error) {
 		TimeoutRate: defaultTimeoutRate,
 	}
 
+	if c.agent == nil {
+		c.agent = NewAgent()
+	}
+
 	c.wg.Add(1)
 	go c.readUntil()
 
@@ -67,6 +71,13 @@ func (c *Client) readUntil() {
 	}
 }
 
+// process of transaction in message
+type Agent struct {
+	transactions map[transactionID]TransactionAgent
+	mux          sync.Mutex
+	nonHandler   Handler // non-registered transactions
+}
+
 type transactionID [TransactionIDSize]byte
 
 // transaction in progress
@@ -75,7 +86,19 @@ type TransactionAgent struct {
 	Timeout time.Time
 }
 
-type Agent struct {
-	transactions map[transactionID]TransactionAgent
-	mux          sync.Mutex
+type AgentHandle struct {
+	handler Handler
+}
+
+type Handler interface {
+	HandleEvent(e EventObject)
+}
+
+func NewAgent() *Agent {
+	h := AgentHandle{}
+	a := &Agent{
+		transactions: make(map[transactionID]TransactionAgent),
+		nonHandler:   h.handler,
+	}
+	return a
 }
