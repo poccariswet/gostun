@@ -45,8 +45,9 @@ func NewClient(conn net.Conn) (*Client, error) {
 		c.agent = NewAgent()
 	}
 
-	c.wg.Add(1)
+	c.wg.Add(2)
 	go c.readUntil()
+	go c.collectUntil()
 
 	return c, nil
 }
@@ -91,7 +92,7 @@ type AgentHandle struct {
 	handler Handler
 }
 
-// reference http.HandlerFunc
+// reference http.HandlerFunc same work
 type Handler interface {
 	HandleEvent(e EventObject)
 }
@@ -125,7 +126,7 @@ func (a *Agent) Process(m *Message) error {
 	delete(a.transactions, m.TransactionID) //delete maps entry
 
 	if ok {
-		tr.handler.HandleEvent(e)
+		tr.handler.HandleEvent(e) // HandleEvent cast the e to hander type
 	} else if a.nonHandler != nil {
 		a.nonHandler.HandleEvent(e) // the transaction is not registered
 	}
