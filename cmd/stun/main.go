@@ -17,7 +17,7 @@ func main() {
 	}
 
 	//	rto := time.Now().Add(time.Second * 5)
-	if err := gostun.MessageBuild(); err != nil {
+	if err := gostun.MessageBuild(gostun.TransactionID, gostun.BindingRequest); err != nil {
 		log.Fatal(err)
 	}
 }
