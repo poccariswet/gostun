@@ -18,6 +18,7 @@ type MessageClass byte
 
 type Method uint16
 
+// class
 const (
 	Request         MessageClass = 0x00 // 0b00
 	Indication      MessageClass = 0x01 // 0b01
@@ -25,10 +26,30 @@ const (
 	ErrorResponse   MessageClass = 0x03 // 0b11
 )
 
+// method
+const (
+	MethodBinding Method = 0x001
+)
+
+// Binding Message type
+var (
+	BindingRequest = NewMessageType(MethodBinding, Request)
+	BindingSuccess = NewMessageType(MethodBinding, SuccessResponse)
+	BindingError   = NewMessageType(MethodBinding, ErrorResponse)
+)
+
 // STUN Message Type Field.
 type MessageType struct {
 	Method Method       // binding
 	Class  MessageClass // request
+}
+
+//reutn new message type has Method and Class
+func NewMessageType(m Method, c MessageClass) MessageType {
+	return MessageType{
+		Method: m,
+		Class:  c,
+	}
 }
 
 type Message struct {
@@ -106,7 +127,7 @@ func (m *Message) Decode() error {
 		return errors.New(err)
 	}
 
-	m.Type.ReadValue(mtype)                           // copy STUN message type
+	m.Type.DecodeMessageType(mtype)                   // copy STUN message type
 	m.Length = uint32(mlength)                        // copy STUN message type
 	copy(m.TransactionID[:], header[8:messageHeader]) // copy STUN Transaction ID (96 bits|12 byte)
 
@@ -169,7 +190,7 @@ const (
    Format of STUN Message Type Field
 */
 
-func (mt *MessageType) ReadValue(v uint16) {
+func (mt *MessageType) DecodeMessageType(v uint16) {
 	// difine class
 	c0 := (v >> shiftc0) & bitc0
 	c1 := (v >> shiftc1) & bitc1
