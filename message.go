@@ -48,8 +48,7 @@ func (m *Message) ReadConn(r io.Reader) (int, error) {
 	}
 
 	m.Raw = raw[:n]
-	//	return n, m.Decode()
-	return n, nil
+	return n, m.Decode()
 }
 
 /*

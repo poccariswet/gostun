@@ -184,7 +184,7 @@ func (a *Agent) TimeOutHandle(trate time.Time) error {
 
 	for i, tr := range a.transactions {
 		if tr.Timeout.Before(trate) {
-			call = append(call, tr.h)
+			call = append(call, tr.handler)
 			remove = append(remove, i)
 		}
 	}
@@ -196,11 +196,11 @@ func (a *Agent) TimeOutHandle(trate time.Time) error {
 
 	a.mux.Unlock()
 	e := EventObject{
-		Error: TransactionTimeOutErr,
+		err: TransactionTimeOutErr,
 	}
 	// return transactions
 	for _, h := range call {
-		h.handler.HandleEvent(e)
+		h.HandleEvent(e)
 	}
 
 	return nil
