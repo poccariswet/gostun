@@ -17,8 +17,8 @@ type Client struct {
 }
 
 type messageClient interface {
-	Process(*Message) error
-	Collect(time.Time) error
+	ProcessHandle(*Message) error
+	TimeOutHandle(time.Time) error
 }
 
 type Connection interface {
@@ -67,14 +67,12 @@ func (c *Client) readUntil() {
 		}
 		_, err := m.ReadConn(c.conn) // read and decode message
 		if err == nil {
-			if processErr := c.agent.Process(m); processErr != nil {
+			if processErr := c.agent.ProcessHandle(m); processErr != nil {
 				return
 			}
 		}
 	}
 }
-
-var ErrAgent = errors.New("agent closed")
 
 func (c *Client) collectUntil() {
 	t := time.NewTicker(c.TimeoutRate)
@@ -85,7 +83,7 @@ func (c *Client) collectUntil() {
 			t.Stop()
 			return
 		case trate := <-t.C:
-			err := c.agent.Collect(trate)
+			err := c.agent.TimeOutHandle(trate)
 			if err == nil || err == ErrAgent {
 				return
 			}
@@ -99,9 +97,10 @@ type Agent struct {
 	transactions map[transactionID]TransactionAgent
 	mux          sync.Mutex
 	nonHandler   Handler // non-registered transactions
+	closed       bool
 }
 
-type transactionID [TransactionIDSize]byte
+type transactionID [TransactionIDSize]byte //12byte, 96bit
 
 // transaction in progress
 type TransactionAgent struct {
@@ -139,7 +138,7 @@ func NewAgent() *Agent {
 	return a
 }
 
-func (a *Agent) Process(m *Message) error {
+func (a *Agent) ProcessHandle(m *Message) error {
 	e := EventObject{
 		Msg: m,
 	}
@@ -152,5 +151,50 @@ func (a *Agent) Process(m *Message) error {
 	} else if a.nonHandler != nil {
 		a.nonHandler.HandleEvent(e) // the transaction is not registered
 	}
+	return nil
+}
+
+/*
+すべてのハンドラがTransactionTimeOutErrを処理するまで、
+指定された時刻より前にデッドラインを持つすべてのトランザクションをblockする。
+エージェントが既に閉じられている場合、ErrAgentを返す
+*/
+
+var (
+	ErrAgent              = errors.New("agent closed")
+	TransactionTimeOutErr = errors.New("transaction is timed out")
+)
+
+func (a *Agent) TimeOutHandle(trate time.Time) error {
+	call := make([]Handler, 0, 100)
+	remove := make([]transactionID, 0, 100)
+	a.mux.Lock()
+
+	if a.closed {
+		a.mux.Unlock()
+		return ErrAgent
+	}
+
+	for i, tr := range a.transactions {
+		if tr.Timeout.Before(trate) {
+			call = append(call, tr.h)
+			remove = append(remove, i)
+		}
+	}
+
+	// no registered transactions
+	for _, id := range remove {
+		delete(a.transactions, id)
+	}
+
+	a.mux.Unlock()
+	e := EventObject{
+		Error: TransactionTimeOutErr,
+	}
+	// return transactions
+	for _, h := range call {
+		h.handler.HandleEvent(e)
+	}
+
 	return nil
 }
