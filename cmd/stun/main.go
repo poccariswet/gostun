@@ -15,5 +15,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_ = c
+
+	//	rto := time.Now().Add(time.Second * 5)
+	if err := gostun.MessageBuild(); err != nil {
+		log.Fatal(err)
+	}
 }
