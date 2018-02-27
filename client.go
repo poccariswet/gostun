@@ -1,6 +1,7 @@
 package gostun
 
 import (
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -17,6 +18,7 @@ type Client struct {
 
 type messageClient interface {
 	Process(*Message) error
+	Collect(time.Time) error
 }
 
 type Connection interface {
@@ -72,6 +74,26 @@ func (c *Client) readUntil() {
 	}
 }
 
+var ErrAgent = errors.New("agent closed")
+
+func (c *Client) collectUntil() {
+	t := time.NewTicker(c.TimeoutRate)
+	defer c.wg.Done()
+	for {
+		select {
+		case <-c.close:
+			t.Stop()
+			return
+		case trate := <-t.C:
+			err := c.agent.Collect(trate)
+			if err == nil || err == ErrAgent {
+				return
+			}
+			panic(err)
+		}
+	}
+}
+
 // process of transaction in message
 type Agent struct {
 	transactions map[transactionID]TransactionAgent
@@ -85,7 +107,7 @@ type transactionID [TransactionIDSize]byte
 type TransactionAgent struct {
 	ID      transactionID
 	Timeout time.Time
-	handler Hander // if transaction is succeed will be called
+	handler Handler // if transaction is succeed will be called
 }
 
 type AgentHandle struct {
@@ -118,7 +140,7 @@ func NewAgent() *Agent {
 }
 
 func (a *Agent) Process(m *Message) error {
-	e := &EventObject{
+	e := EventObject{
 		Msg: m,
 	}
 	a.mux.Lock() // protect transaction
