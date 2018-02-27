@@ -165,6 +165,13 @@ var (
 	TransactionTimeOutErr = errors.New("transaction is timed out")
 )
 
+/*
+The value for RTO SHOULD be cached by a client after the completion
+of the transaction, and used as the starting value for RTO for the
+next transaction to the same server (based on equality of IP
+address).
+*/
+
 func (a *Agent) TimeOutHandle(trate time.Time) error {
 	call := make([]Handler, 0, 100)
 	remove := make([]transactionID, 0, 100)
