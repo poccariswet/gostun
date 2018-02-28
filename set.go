@@ -18,13 +18,21 @@ func (transactionIDSetter) SetTo(m *Message) error {
 	return m.NewTransaction()
 }
 
-func (t MessageType) SetTo(m *Message) error { return nil }
+func (t MessageType) SetTo(m *Message) error {
+	m.TypeSet(t)
+	return nil
+}
 
 func (m *Message) NewTransaction() error {
-	_, err := io.ReadFunc(rand.Reader, m.TransactionID[:])
+	_, err := io.ReadFull(rand.Reader, m.TransactionID[:])
 	if err != nil {
 		return err
 	}
 	m.WriteTransactionID()
 	return nil
+}
+
+func (m *Message) TypeSet(t MessageType) {
+	m.Type = t           // Message type set
+	m.WriteMessageType() // Write Class and Method
 }
