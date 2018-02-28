@@ -82,11 +82,11 @@ func (m *Message) WriteMessageType() {
 }
 
 func (m *Message) WriteMessageLength() {
-	binary.BigEndian.PutUint16(m.Raw[2:4], m.Length)
+	binary.BigEndian.PutUint16(m.Raw[2:4], uint16(m.Length))
 }
 
 func (m *Message) WriteMagicCookie() {
-	binary.BigEndian.PutUint16(m.Raw[4:8], magicCookie)
+	binary.BigEndian.PutUint32(m.Raw[4:8], magicCookie)
 }
 
 func (m *Message) WriteTransactionID() {
