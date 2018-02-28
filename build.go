@@ -45,6 +45,7 @@ func (m *Message) AllocRaw() {
    |                     Transaction ID (96 bits)                  |
    |                                                               |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	                   Format of STUN Message Header
 */
 
 /*
@@ -93,13 +94,25 @@ func (m *Message) WriteMessageType() {
 	binary.BigEndian.PutUint16(m.Raw[0:2], mtype)
 }
 
+func (m *Message) WriteMessageLength() {
+	binary.BigEndian.PutUint16(m.Raw[2:4], m.Length)
+}
+
+func (m *Message) WriteMagicCookie() {
+	binary.BigEndian.PutUint16(m.Raw[4:8], magicCookie)
+}
+
+func (m *Message) WriteTransactionID() {
+	copy(m.Raw[8:messageHeader], m.TransactionID[:])
+}
+
 // make message header
 func (m *Message) WriteMessageHeader() {
 	m.AllocRaw() // alloc 0, part of message header size
 	m.WriteMessageType()
-	m.WriteMessageLength() // x
-	m.WriteMagicCookie()   // x
-	m.WriteTransactionID() // x
+	m.WriteMessageLength()
+	m.WriteMagicCookie()
+	m.WriteTransactionID()
 
 }
 
