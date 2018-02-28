@@ -11,7 +11,33 @@ type MsgSetter interface {
 
 var TransactionID MsgSetter = transactionIDSetter{}
 
-func (m *Message) build(s ...MsgSetter) error {}
+// reset message
+func (m *Message) Reset() {
+	m.Raw = m.Raw[:0]
+	m.Length = 0
+	m.Attributes = m.Attributes[:0]
+}
+
+func (m *Message) AllocRaw() {
+	l := len(m.Raw) + messageHeader
+	for cap(m.Raw) < l {
+		m.Raw = append(m.Raw, 0)
+	}
+	m.Raw = m.Raw[:l]
+}
+
+// make message header
+func (m *Message) WriteMessageHeader() {
+	m.AllocRaw() // alloc 0, part of message header size
+
+}
+
+func (m *Message) build(s ...MsgSetter) error {
+	m.Reset()
+	m.WriteMessageHeader()
+
+	return nil
+}
 
 // wraps m.build
 func Build(s ...MsgSetter) (*Message, error) {
