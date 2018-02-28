@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
 	"log"
@@ -27,4 +28,10 @@ func main() {
 	if _, err := io.ReadFull(r, longBuf); err != nil {
 		fmt.Println("error:", err) // error: unexpected EOF
 	}
+
+	var tbuf [12]byte
+	if _, err := io.ReadFull(rand.Reader, tbuf[:]); err != nil { // make random byte
+		log.Fatal(err)
+	}
+	fmt.Printf("%x\n", tbuf)
 }
