@@ -1,6 +1,9 @@
 package gostun
 
-import "log"
+import (
+	"encoding/binary"
+	"log"
+)
 
 type transactionIDSetter struct{}
 
@@ -30,9 +33,71 @@ func (m *Message) AllocRaw() {
 	m.Raw = m.Raw[:l]
 }
 
+/*
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |         Type                  |            Length             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                         Value (variable)                ....
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                         Format of STUN Attributes
+*/
+
+/*
+    0                 1
+    2  3  4 5 6 7 8 9 0 1 2 3 4 5
+
+   +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+   |M |M |M|M|M|C|M|M|M|C|M|M|M|M|
+   |11|10|9|8|7|1|6|5|4|0|3|2|1|0|
+   +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+                  7       4
+   Format of STUN Message Type Field
+
+	const (
+	bitc0   = 0x1
+	bitc1   = 0x2
+	shiftc0 = 4
+	shiftc1 = 7
+
+	methodshift1 = 1
+	methodshift2 = 2
+	mbit1        = 0xf   //M0~M3=>0b0000000000001111
+	mbit2        = 0x70  //M4~M6=>0b0000000001110000
+	mbit3        = 0xf80 //M7~M11=>0b00011111000000
+)
+
+*/
+
+// write message type to m.Raw
+func (m *Message) WriteMessageType() {
+	// Class
+	class := uint16(m.Type.Class)
+	c0 := (class & bitc0) << shiftc0 // 4 bit shift
+	c1 := (class & bitc1) << shiftc1 // 7 bit shift
+	c := c0 + c1
+
+	// Method
+	method := uint16(m.Type.Method)
+	m1m3 := method & mbit1
+	m4m6 := method & mbit2
+	m7m11 := method & mbit3
+	method = m1m3 + (m4m6 << methodshift1) + (m7m11 << methodshift2)
+
+	mtype := c + method
+
+	binary.BigEndian.PutUint16(m.Raw[0:2], mtype)
+}
+
 // make message header
 func (m *Message) WriteMessageHeader() {
 	m.AllocRaw() // alloc 0, part of message header size
+	m.WriteMessageType()
+	m.WriteMessageLength()
+	m.WriteMagicCookie()
+	m.WriteTransactionID()
 
 }
 
