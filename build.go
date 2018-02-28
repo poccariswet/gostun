@@ -37,12 +37,14 @@ func (m *Message) AllocRaw() {
     0                   1                   2                   3
     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |         Type                  |            Length             |
+   |0 0|     STUN Message Type     |         Message Length        |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                         Value (variable)                ....
+   |                         Magic Cookie                          |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-                         Format of STUN Attributes
+   |                                                               |
+   |                     Transaction ID (96 bits)                  |
+   |                                                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 
 /*
@@ -95,9 +97,9 @@ func (m *Message) WriteMessageType() {
 func (m *Message) WriteMessageHeader() {
 	m.AllocRaw() // alloc 0, part of message header size
 	m.WriteMessageType()
-	m.WriteMessageLength()
-	m.WriteMagicCookie()
-	m.WriteTransactionID()
+	m.WriteMessageLength() // x
+	m.WriteMagicCookie()   // x
+	m.WriteTransactionID() // x
 
 }
 
