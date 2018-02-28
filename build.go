@@ -5,19 +5,6 @@ import (
 	"log"
 )
 
-type transactionIDSetter struct{}
-
-func (transactionIDSetter) AddTo(m *Message) error {
-	return nil
-}
-
-// Sets *Message attribute.
-type MsgSetter interface {
-	AddTo(m *Message) error
-}
-
-var TransactionID MsgSetter = transactionIDSetter{}
-
 // reset message
 func (m *Message) Reset() {
 	m.Raw = m.Raw[:0]
@@ -113,12 +100,17 @@ func (m *Message) WriteMessageHeader() {
 	m.WriteMessageLength()
 	m.WriteMagicCookie()
 	m.WriteTransactionID()
-
 }
 
 func (m *Message) build(s ...MsgSetter) error {
 	m.Reset()
 	m.WriteMessageHeader()
+
+	for _, v := range s {
+		if err := v.AddTo(m); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
