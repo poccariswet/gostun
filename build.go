@@ -4,6 +4,10 @@ import "log"
 
 type transactionIDSetter struct{}
 
+func (transactionIDSetter) AddTo(m *Message) error {
+	return nil
+}
+
 // Sets *Message attribute.
 type MsgSetter interface {
 	AddTo(m *Message) error
