@@ -107,7 +107,7 @@ func (m *Message) build(s ...MsgSetter) error {
 	m.WriteMessageHeader()
 
 	for _, v := range s {
-		if err := v.AddTo(m); err != nil {
+		if err := v.SetTo(m); err != nil {
 			return err
 		}
 	}

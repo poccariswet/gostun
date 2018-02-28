@@ -6,5 +6,9 @@ var TransactionID MsgSetter = transactionIDSetter{}
 
 // Sets Message
 type MsgSetter interface {
-	AddTo(m *Message) error
+	SetTo(m *Message) error
+}
+
+func (transactionIDSetter) SetTo(m *Message) error {
+	return m.NewTransactionID()
 }
