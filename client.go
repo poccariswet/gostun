@@ -14,6 +14,7 @@ type Client struct {
 	wg          sync.WaitGroup
 	close       chan struct{}
 	agent       messageClient
+	rw          sync.RWMutex
 }
 
 type messageClient interface {
