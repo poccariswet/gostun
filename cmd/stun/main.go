@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/soeyusuke/gostun"
 )
@@ -18,7 +19,6 @@ func main() {
 	}
 	_ = c
 
-	//	rto := time.Now().Add(time.Second * 5)
 	m := gostun.MessageBuild(gostun.TransactionID, gostun.BindingRequest)
 	fmt.Printf("Type: %x, %x\n", m.Type.Class, m.Type.Method)
 	fmt.Printf("Length: %v\n", m.Length)
@@ -26,4 +26,16 @@ func main() {
 	fmt.Printf("TransactionID: %x\n", m.TransactionID)
 	fmt.Printf("Attributes: %v\n", m.Attributes)
 	fmt.Printf("Raw: %v\n", m.Raw)
+
+	f := func(e gostun.EventObject) {
+		if e.err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	rto := time.Now().Add(time.Second * 5)
+
+	if err := c.Call(m, f, rto); err != nil {
+		log.Fatal(err)
+	}
 }
