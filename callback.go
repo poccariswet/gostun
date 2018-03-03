@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -42,6 +43,24 @@ func (c *CallbackHandle) Wait() {
 		c.cond.Wait()
 	}
 	c.cond.L.Unlock()
+}
+
+func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
+	c.rw.RLock()
+	closed := c.close
+	c.rw.RUnlock()
+
+	if closed {
+		return errors.New("client closed")
+	}
+
+	if h != nil {
+		if err := c.agent.ProccessLaunch(m.TransactionID, h, rto); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *Client) Call(m *Message, h Handler, rto time.Time) error {
