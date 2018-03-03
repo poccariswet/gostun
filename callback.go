@@ -45,6 +45,28 @@ func (c *CallbackHandle) Wait() {
 	c.Cond.L.Unlock()
 }
 
+func (a *Agent) TransactionHandle(id [TransactionIDSize]byte, h Handler, rto time.Time) error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	if a.closed {
+		return errors.New("agent closed")
+	}
+
+	_, exist := a.transactions[id]
+	if exist {
+		return errors.New("transaction exists with same id")
+	}
+
+	a.transactions[id] = TransactionAgent{
+		id:      id,
+		handler: h,
+		Timeout: rto,
+	}
+
+	return nil
+}
+
 func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	c.rw.RLock()
 	closed := c.clientclose
