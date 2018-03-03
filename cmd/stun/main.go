@@ -31,6 +31,10 @@ func main() {
 		if event.Err != nil {
 			log.Fatal(err)
 		}
+		var addr gostun.XORMappedAddr
+		if err := addr.GetXORMapped(m); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	rto := time.Now().Add(time.Second * 5)
