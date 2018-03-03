@@ -15,11 +15,13 @@ type Client struct {
 	close       chan struct{}
 	agent       messageClient
 	rw          sync.RWMutex
+	clientclose bool
 }
 
 type messageClient interface {
 	ProcessHandle(*Message) error
 	TimeOutHandle(time.Time) error
+	TransactionHandle([TransactionIDSize]byte, Handler, time.Time) error
 }
 
 type Connection interface {

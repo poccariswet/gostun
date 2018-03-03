@@ -1,4 +1,4 @@
-package main
+package gostun
 
 import (
 	"errors"
@@ -39,15 +39,15 @@ func (c *CallbackHandle) HandleEvent(e EventObject) {
 
 func (c *CallbackHandle) Wait() {
 	c.Cond.L.Lock()
-	for !c.processed {
-		c.cond.Wait()
+	for !c.process {
+		c.Cond.Wait()
 	}
-	c.cond.L.Unlock()
+	c.Cond.L.Unlock()
 }
 
 func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	c.rw.RLock()
-	closed := c.close
+	closed := c.clientclose
 	c.rw.RUnlock()
 
 	if closed {
@@ -55,7 +55,7 @@ func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	}
 
 	if h != nil {
-		if err := c.agent.ProccessLaunch(m.TransactionID, h, rto); err != nil {
+		if err := c.agent.TransactionHandle(m.TransactionID, h, rto); err != nil {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	return nil
 }
 
-func (c *Client) Call(m *Message, h Handler, rto time.Time) error {
+func (c *Client) Call(m *Message, h func(EventObject), rto time.Time) error {
 	f := callbackPool.Get().(*CallbackHandle)
 	f.callback = h
 
