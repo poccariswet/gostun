@@ -2,6 +2,7 @@ package gostun
 
 import (
 	"errors"
+	"io"
 	"log"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ func (a *Agent) TransactionHandle(id [TransactionIDSize]byte, h Handler, rto tim
 	}
 
 	a.transactions[id] = TransactionAgent{
-		id:      id,
+		ID:      id,
 		handler: h,
 		Timeout: rto,
 	}
@@ -82,6 +83,11 @@ func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 		}
 	}
 
+	err := m.WriteTo(c.conn)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -101,4 +107,10 @@ func (c *Client) Call(m *Message, h func(EventObject), rto time.Time) error {
 	f.Wait()
 
 	return nil
+}
+
+// write the m.Raw=request to conn
+func (m *Message) WriteTo(w io.Writer) error {
+	_, err := w.Write(m.Raw)
+	return err
 }
