@@ -5,6 +5,8 @@ import (
 	"log"
 )
 
+// create request, so write contents of request to m.Raw
+
 // reset message
 func (m *Message) Reset() {
 	m.Raw = m.Raw[:0]
