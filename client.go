@@ -129,7 +129,7 @@ func (f HandleFunc) HandleEvent(e EventObject) {
 
 type EventObject struct {
 	Msg *Message
-	err error
+	Err error
 }
 
 func NewAgent() *Agent {
@@ -199,7 +199,7 @@ func (a *Agent) TimeOutHandle(trate time.Time) error {
 
 	a.mux.Unlock()
 	e := EventObject{
-		err: TransactionTimeOutErr,
+		Err: TransactionTimeOutErr,
 	}
 	// return transactions
 	for _, h := range call {

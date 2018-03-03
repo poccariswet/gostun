@@ -27,8 +27,8 @@ func main() {
 	fmt.Printf("Attributes: %v\n", m.Attributes)
 	fmt.Printf("Raw: %v\n", m.Raw)
 
-	f := func(e gostun.EventObject) {
-		if e.err != nil {
+	f := func(event gostun.EventObject) {
+		if event.Err != nil {
 			log.Fatal(err)
 		}
 	}
