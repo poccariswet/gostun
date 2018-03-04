@@ -1,6 +1,9 @@
 package gostun
 
-import "net"
+import (
+	"errors"
+	"net"
+)
 
 type Addr struct {
 	Port int    // port number
@@ -20,7 +23,21 @@ type Addr struct {
 
 type XORMappedAddr Addr
 
-func (addr *XORMappedAddr) GetAddr(m *Message, address AttributeType) error {
+func (m *Message) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
+	for _, attr := range m.Attributes {
+		if attr.Type == attrtype {
+			return attr.Value, nil
+		}
+	}
+	return nil, errors.New("Attribute is not matched")
+}
+
+func (addr *XORMappedAddr) GetAddr(m *Message, attrtype AttributeType) error {
+	val, err := m.GetAttrFiledValue(attrtype)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
