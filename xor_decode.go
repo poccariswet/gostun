@@ -1,7 +1,9 @@
 package gostun
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 )
 
@@ -21,6 +23,13 @@ type Addr struct {
                Format of XOR-MAPPED-ADDRESS Attribute
 */
 
+//  0x01:IPv4
+//  0x02:IPv6
+const (
+	IPv4 uint16 = 0x01
+	IPv6 uint16 = 0x02
+)
+
 type XORMappedAddr Addr
 
 func (m *Message) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
@@ -36,6 +45,23 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	val, err := m.GetAttrFiledValue(attrtype)
 	if err != nil {
 		return err
+	}
+
+	var (
+		family uint16
+		xport  uint16
+		ipl    int
+	)
+	family = binary.BigEndian.Uint16(val[0:2])
+
+	//check family address
+	if family == IPv4 {
+		ipl = net.IPv4len
+	} else if family == IPv6 {
+		ipl = net.IPv6len
+	} else {
+		err := fmt.Sprintf("family decode err: family = %d\n", family)
+		return errors.New(err)
 	}
 
 	return nil
