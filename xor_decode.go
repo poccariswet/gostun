@@ -32,7 +32,7 @@ func (m *Message) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
 	return nil, errors.New("Attribute is not matched")
 }
 
-func (addr *XORMappedAddr) GetAddr(m *Message, attrtype AttributeType) error {
+func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) error {
 	val, err := m.GetAttrFiledValue(attrtype)
 	if err != nil {
 		return err
@@ -42,5 +42,5 @@ func (addr *XORMappedAddr) GetAddr(m *Message, attrtype AttributeType) error {
 }
 
 func (addr *XORMappedAddr) GetXORMapped(m *Message) error {
-	return addr.GetAddr(m, XOR_MAPPED_ADDRESS)
+	return addr.DecodexorAddr(m, XOR_MAPPED_ADDRESS)
 }
