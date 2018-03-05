@@ -64,6 +64,12 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		return errors.New(err)
 	}
 
+	addr.IP = addr.IP[:cap(addr.IP)]
+	for len(addr.IP) < ipl {
+		addr.IP = append(addr.IP, 0)
+	}
+	addr.IP = addr.IP[:ipl]
+
 	return nil
 }
 
