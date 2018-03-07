@@ -48,9 +48,10 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	}
 
 	var (
-		family uint16
-		xport  uint16
-		ipl    int
+		family   uint16
+		xport    uint16
+		ipl      int
+		xaddress = make([]byte, 4+TransactionIDSize)
 	)
 	family = binary.BigEndian.Uint16(val[0:2])
 
@@ -75,7 +76,7 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		 XOR'ing it with the most significant 16 bits of the magic cookie, and
 		 then the converting the result to network byte order.
 	*/
-	mcookie := magicCookie >> 16
+	mcookie := magicCookie >> 16 //most significant 16 bits
 	addr.Port = binary.BigEndian.Uint16(val[0:2]) ^ mcookie
 
 	/*
@@ -85,8 +86,18 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		family is IPv6, X-Address is computed by taking the mapped IP address
 		in host byte order, XOR'ing it with the concatenation of the magic
 		cookie and the 96-bit transaction ID, and converting the result to
-		network byte order.
+		network byte order(BigEndian).
+
+		IPアドレスファミリーがIPv4であるなら、X-アドレスは、マップされたIPアドレスをホ
+		ストバイトオーダーで取得して、マジッククッキーでそれをXORして、そして
+		その結果をネットワークバイトオーダーに変換することで計算される
+
+		IPアドレスファミリーがIPv6であるなら、X-アドレスは、マップされたIPアドレ
+		スをホストバイトオーダーで取得して、マジッククッキーと96ビットのトラ
+		ンザクションIDとを連結したものでそれをXORして、そしてその結果をネット
+		ワークバイトオーダーに変換することで計算される
 	*/
+	binary.BigEndian.PutUint32(xaddress[0:4], magicCookie)
 
 	return nil
 }
