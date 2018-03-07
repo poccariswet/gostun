@@ -70,6 +70,24 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	}
 	addr.IP = addr.IP[:ipl]
 
+	/*
+		X-Port is computed by taking the mapped port in host byte order,
+		 XOR'ing it with the most significant 16 bits of the magic cookie, and
+		 then the converting the result to network byte order.
+	*/
+	mcookie := magicCookie >> 16
+	addr.Port = binary.BigEndian.Uint16(val[0:2]) ^ mcookie
+
+	/*
+		If the IPaddress family is IPv4, X-Address is computed by taking the mapped IP
+		address in host byte order, XOR'ing it with the magic cookie, and
+		converting the result to network byte order.  If the IP address
+		family is IPv6, X-Address is computed by taking the mapped IP address
+		in host byte order, XOR'ing it with the concatenation of the magic
+		cookie and the 96-bit transaction ID, and converting the result to
+		network byte order.
+	*/
+
 	return nil
 }
 
