@@ -32,6 +32,10 @@ const (
 
 type XORMappedAddr Addr
 
+func (addr *XORMappedAddr) String() string {
+	return fmt.Sprintf("IP: %v\nPort:%d\n", addr.IP, addr.Port)
+}
+
 func (m *Message) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
 	for _, attr := range m.Attributes {
 		if attr.Type == attrtype {
@@ -48,10 +52,8 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	}
 
 	var (
-		family   uint16
-		xport    uint16
-		ipl      int
-		xaddress = make([]byte, 4+TransactionIDSize)
+		family uint16
+		ipl    int
 	)
 	family = binary.BigEndian.Uint16(val[0:2])
 
@@ -76,8 +78,6 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		 XOR'ing it with the most significant 16 bits of the magic cookie, and
 		 then the converting the result to network byte order.
 	*/
-	mcookie := magicCookie >> 16 //most significant 16 bits
-	addr.Port = binary.BigEndian.Uint16(val[0:2]) ^ mcookie
 
 	/*
 		If the IPaddress family is IPv4, X-Address is computed by taking the mapped IP
@@ -97,9 +97,20 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		ンザクションIDとを連結したものでそれをXORして、そしてその結果をネット
 		ワークバイトオーダーに変換することで計算される
 	*/
-	binary.BigEndian.PutUint32(xaddress[0:4], magicCookie)
+	addr.XorAddr(m.TransactionID[:], val)
 
 	return nil
+}
+
+func (addr *XORMappedAddr) XorAddr(trans, value []byte) {
+	//	xaddress := make([]byte, 4+TransactionIDSize)
+
+	for i := 0; i < len(value)-4; i++ {
+		addr.IP = append(addr.IP, value[i+4]^trans[i])
+	}
+
+	mscookie := magicCookie >> 16
+	addr.Port = int(binary.BigEndian.Uint16(value[2:4])) ^ mscookie
 }
 
 func (addr *XORMappedAddr) GetXORMapped(m *Message) error {
