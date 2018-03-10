@@ -36,17 +36,25 @@ func (addr *XORMappedAddr) String() string {
 	return fmt.Sprintf("IP: %v\nPort:%d\n", addr.IP, addr.Port)
 }
 
-func (m *Message) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
-	for _, attr := range m.Attributes {
-		if attr.Type == attrtype {
-			return attr.Value, nil
+func (attr Attributes) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
+	for _, a := range attr {
+		if a.Type == attrtype {
+			return a.Value, nil
 		}
 	}
 	return nil, errors.New("Attribute is not matched")
 }
 
+func (m *Message) GetRapped(attrtype AttributeType) ([]byte, error) {
+	val, err := m.Attributes.GetAttrFiledValue(attrtype)
+	if err != nil {
+		return nil, err
+	}
+	return val, nil
+}
+
 func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) error {
-	val, err := m.GetAttrFiledValue(attrtype)
+	val, err := m.GetRapped(attrtype)
 	if err != nil {
 		return err
 	}
