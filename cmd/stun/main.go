@@ -17,7 +17,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_ = c
 
 	m := gostun.MessageBuild(gostun.TransactionID, gostun.BindingRequest)
 	fmt.Printf("Type: %x, %x\n", m.Type.Class, m.Type.Method)
@@ -28,13 +27,15 @@ func main() {
 	fmt.Printf("Raw: %v\n", m.Raw)
 
 	f := func(event gostun.EventObject) {
+		var addr gostun.XORMappedAddr
 		if event.Err != nil {
 			log.Fatal(err)
 		}
-		var addr gostun.XORMappedAddr
 		if err := addr.GetXORMapped(m); err != nil {
-			log.Fatal(err)
+			//log.Fatal(err)
+			log.Print(err)
 		}
+		fmt.Println(addr)
 	}
 
 	rto := time.Now().Add(time.Second * 5)
