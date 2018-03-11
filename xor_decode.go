@@ -37,11 +37,15 @@ func (addr *XORMappedAddr) String() string {
 }
 
 func (attr Attributes) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
+	fmt.Println("-----------------------------------")
+	fmt.Println(attr)
 	for _, a := range attr {
+		fmt.Println(a.Type, "\n")
 		if a.Type == attrtype {
 			return a.Value, nil
 		}
 	}
+	fmt.Println("-----------------------------------")
 	return nil, errors.New("Attribute is not matched")
 }
 
