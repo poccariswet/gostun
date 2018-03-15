@@ -43,11 +43,8 @@ func Dial(network, addr string) (*Client, error) {
 func NewClient(conn net.Conn) (*Client, error) {
 	c := &Client{
 		conn:        conn,
+		agent:       NewAgent(),
 		TimeoutRate: defaultTimeoutRate,
-	}
-
-	if c.agent == nil {
-		c.agent = NewAgent()
 	}
 
 	c.wg.Add(2)
@@ -70,7 +67,7 @@ func (c *Client) readUntil() {
 		}
 		_, err := m.ReadConn(c.conn) // read and decode message
 		if err == nil {
-			if processErr := c.agent.ProcessHandle(m); processErr != nil {
+			if processErr := c.agent.ProcessHandle(m); processErr == ErrAgent {
 				return
 			}
 		}
