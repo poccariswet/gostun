@@ -5,23 +5,6 @@ import (
 	"log"
 )
 
-// create request, so write contents of request to m.Raw
-
-// reset message
-func (m *Message) Reset() {
-	m.Raw = m.Raw[:0]
-	m.Length = 0
-	m.Attributes = m.Attributes[:0]
-}
-
-func (m *Message) AllocRaw() {
-	l := len(m.Raw) + messageHeader
-	for cap(m.Raw) < l {
-		m.Raw = append(m.Raw, 0)
-	}
-	m.Raw = m.Raw[:l]
-}
-
 /*
     0                   1                   2                   3
     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -62,6 +45,23 @@ func (m *Message) AllocRaw() {
 )
 
 */
+
+// create request, so write contents of request to m.Raw
+
+// reset message
+func (m *Message) Reset() {
+	m.Raw = m.Raw[:0]
+	m.Length = 0
+	m.Attributes = m.Attributes[:0]
+}
+
+func (m *Message) AllocRaw() {
+	l := len(m.Raw) + messageHeader
+	for cap(m.Raw) < l {
+		m.Raw = append(m.Raw, 0)
+	}
+	m.Raw = m.Raw[:l]
+}
 
 // write message type to m.Raw
 func (m *Message) WriteMessageType() {
