@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 )
 
 type Addr struct {
@@ -32,13 +33,12 @@ const (
 
 type XORMappedAddr Addr
 
-func (addr *XORMappedAddr) String() string {
-	return fmt.Sprintf("IP: %v\nPort:%d\n", addr.IP, addr.Port)
+func (addr XORMappedAddr) String() string {
+	return fmt.Sprintf("IP: %s\nPort:%s", addr.IP.String(), strconv.Itoa(addr.Port))
 }
 
 func (attr Attributes) GetAttrFiledValue(attrtype AttributeType) ([]byte, error) {
 	for _, a := range attr {
-		fmt.Println(a.Type, "\n")
 		if a.Type == attrtype {
 			return a.Value, nil
 		}
