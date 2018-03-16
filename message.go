@@ -133,6 +133,10 @@ func (at AttributeType) String() string {
 	return name
 }
 
+func (af AttributeField) String() string {
+	return fmt.Sprintf("%s: 0x%x", af.Type, af.Value)
+}
+
 func (m *Message) Decode() error {
 	header := m.Raw
 	mtype := binary.BigEndian.Uint16(header[0:2])   //STUN Message type
