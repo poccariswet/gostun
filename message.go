@@ -110,6 +110,29 @@ const (
 	FINGERPRINT      AttributeType = 0x8028
 )
 
+var AttrTypeName = map[AttributeType]string{
+	MAPPED_ADDRESS:     "MAPPED-ADDRESS",
+	USERNAME:           "USERNAME",
+	MESSAGE_INTEGRITY:  "MESSAGE-INTEGRITY",
+	ERROR_CODE:         "ERROR-CODE",
+	UNKNOWN_ATTRIBUTES: "UNKNOWN-ATTRIBUTES",
+	REALM:              "REALM",
+	NONCE:              "NONCE",
+	XOR_MAPPED_ADDRESS: "XOR-MAPPED-ADDRESS",
+
+	SOFTWARE:         "SOFTWARE",
+	ALTERNATE_SERVER: "ALTERNATE_SERVER",
+	FINGERPRINT:      "FINGERPRINT",
+}
+
+func (at AttributeType) String() string {
+	name, ok := AttrTypeName[at]
+	if !ok {
+		return fmt.Sprintf("non-attribute: %x", at)
+	}
+	return name
+}
+
 func (m *Message) Decode() error {
 	header := m.Raw
 	mtype := binary.BigEndian.Uint16(header[0:2])   //STUN Message type
@@ -117,11 +140,12 @@ func (m *Message) Decode() error {
 	mcookie := binary.BigEndian.Uint32(header[4:8]) //Magic Cookie
 	fullHeader := messageHeader + int(mlength)      //len(m.Raw)
 
+	// check magic cookie
 	if mcookie != magicCookie {
 		err := fmt.Sprintf("%x is invalid value magicCookie is %x\n", mcookie, magicCookie)
 		return errors.New(err)
 	}
-
+	// check header size
 	if len(header) < fullHeader {
 		err := fmt.Sprintf("this length %d is less than %d", len(header), fullHeader)
 		return errors.New(err)
@@ -161,7 +185,6 @@ func (m *Message) Decode() error {
 
 		m.Attributes = append(m.Attributes, attr)
 	}
-
 	return nil
 }
 
@@ -194,8 +217,8 @@ func (mt *MessageType) DecodeMessageType(v uint16) {
 	// difine class
 	c0 := (v >> shiftc0) & bitc0
 	c1 := (v >> shiftc1) & bitc1
-	Class := c0 + c1
-	mt.Class = MessageClass(Class)
+	class := c0 + c1
+	mt.Class = MessageClass(class)
 
 	// method
 	m0m3 := v & mbit1
