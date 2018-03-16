@@ -106,18 +106,20 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 		ンザクションIDとを連結したものでそれをXORして、そしてその結果をネット
 		ワークバイトオーダーに変換することで計算される
 	*/
-	addr.XorAddr(m.TransactionID[:], val)
+	buf := make([]byte, ipl)
+	binary.BigEndian.PutUint32(buf[:4], magicCookie)
+	copy(buf[4:], m.TransactionID[:])
+	addr.XorAddr(val[4:], buf)
 
 	return nil
 }
 
-func (addr *XORMappedAddr) XorAddr(trans, value []byte) {
-	//	xaddress := make([]byte, 4+TransactionIDSize)
-
-	for i := 0; i < len(value)-4; i++ {
-		addr.IP = append(addr.IP, value[i+4]^trans[i])
+func (addr *XORMappedAddr) XorAddr(value, buf []byte) {
+	// address
+	for i := 0; i < len(value); i++ {
+		addr.IP[i] = value[i] ^ buf[i]
 	}
-
+	//port
 	mscookie := magicCookie >> 16
 	addr.Port = int(binary.BigEndian.Uint16(value[2:4])) ^ mscookie
 }
