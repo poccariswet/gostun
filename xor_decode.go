@@ -109,19 +109,21 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	buf := make([]byte, ipl)
 	binary.BigEndian.PutUint32(buf[:4], magicCookie)
 	copy(buf[4:], m.TransactionID[:])
-	addr.XorAddr(val[4:], buf)
+	addr.XorAddr(val[2:], buf)
 
 	return nil
 }
 
 func (addr *XORMappedAddr) XorAddr(value, buf []byte) {
+	//port
+	mscookie := magicCookie >> 16
+	addr.Port = int(binary.BigEndian.Uint16(value[0:2])) ^ mscookie
+
 	// address
+	value = value[2:]
 	for i := 0; i < len(value); i++ {
 		addr.IP[i] = value[i] ^ buf[i]
 	}
-	//port
-	mscookie := magicCookie >> 16
-	addr.Port = int(binary.BigEndian.Uint16(value[2:4])) ^ mscookie
 }
 
 func (addr *XORMappedAddr) GetXORMapped(m *Message) error {
