@@ -156,6 +156,7 @@ func (mt *MessageType) DecodeMessageType(v uint16) {
 	mt.Method = Method(m)
 }
 
+// Attribute decode
 func (m *Message) AttrDecode(buf []byte, l int) error {
 	m.Attributes = m.Attributes[:0]
 	attrsize := 0 // initialize
