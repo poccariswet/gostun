@@ -16,15 +16,15 @@ const (
 
 type MessageClass byte
 
-type Method uint16
-
 // class
 const (
-	Request         MessageClass = 0x00 // 0b00
-	Indication      MessageClass = 0x01 // 0b01
-	SuccessResponse MessageClass = 0x02 // 0b10
-	ErrorResponse   MessageClass = 0x03 // 0b11
+	Request         MessageClass = 0x00
+	Indication      MessageClass = 0x01
+	SuccessResponse MessageClass = 0x02
+	ErrorResponse   MessageClass = 0x03
 )
+
+type Method uint16
 
 // method
 const (
@@ -44,14 +44,6 @@ type MessageType struct {
 	Class  MessageClass // request
 }
 
-//reutn new message type has Method and Class
-func NewMessageType(m Method, c MessageClass) MessageType {
-	return MessageType{
-		Method: m,
-		Class:  c,
-	}
-}
-
 // stun message type
 type Message struct {
 	Raw           []byte //full message
@@ -59,6 +51,14 @@ type Message struct {
 	Length        uint32
 	TransactionID [TransactionIDSize]byte
 	Attributes    Attributes
+}
+
+//reutn new message type has Method and Class
+func NewMessageType(m Method, c MessageClass) MessageType {
+	return MessageType{
+		Method: m,
+		Class:  c,
+	}
 }
 
 func (m *Message) ReadConn(r io.Reader) (int, error) {
