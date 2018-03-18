@@ -48,13 +48,6 @@ import (
 
 // create request, so write contents of request to m.Raw
 
-// reset message
-func (m *Message) Reset() {
-	m.Raw = m.Raw[:0]
-	m.Length = 0
-	m.Attributes = m.Attributes[:0]
-}
-
 func (m *Message) AllocRaw() {
 	l := len(m.Raw) + messageHeader
 	for cap(m.Raw) < l {
@@ -95,18 +88,13 @@ func (m *Message) WriteTransactionID() {
 	copy(m.Raw[8:messageHeader], m.TransactionID[:])
 }
 
-// make message header
-func (m *Message) WriteMessageHeader() {
+func (m *Message) build(s ...MsgSetter) error {
+	// make message header
 	m.AllocRaw() // alloc 0, part of message header size
 	m.WriteMessageType()
 	m.WriteMessageLength()
 	m.WriteMagicCookie()
 	m.WriteTransactionID()
-}
-
-func (m *Message) build(s ...MsgSetter) error {
-	m.Reset()
-	m.WriteMessageHeader()
 
 	for _, v := range s {
 		if err := v.SetTo(m); err != nil {
