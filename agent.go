@@ -29,16 +29,16 @@ type AgentHandle struct {
 
 // reference http.HandlerFunc same work
 type Handler interface {
-	HandleEvent(e EventObject)
+	HandleEvent(e MessageObj)
 }
 
-type HandleFunc func(e EventObject)
+// type HandleFunc func(e EventObject)
 
-func (f HandleFunc) HandleEvent(e EventObject) {
-	f(e)
-}
+// func (f HandleFunc) HandleEvent(e EventObject) {
+// 	f(e)
+// }
 
-type EventObject struct {
+type MessageObj struct {
 	Msg *Message
 	Err error
 }
@@ -53,12 +53,14 @@ func NewAgent() *Agent {
 }
 
 func (a *Agent) ProcessHandle(m *Message) error {
-	e := EventObject{
+	e := MessageObj{
 		Msg: m,
 	}
-	a.mux.Lock() // protect transaction
+
+	a.mux.Lock() // protect to do multiple access to transaction
 	tr, ok := a.transactions[m.TransactionID]
 	delete(a.transactions, m.TransactionID) //delete maps entry
+	a.mux.Unlock()
 
 	if ok {
 		tr.handler.HandleEvent(e) // HandleEvent cast the e to hander type
@@ -109,7 +111,7 @@ func (a *Agent) TimeOutHandle(trate time.Time) error {
 	}
 
 	a.mux.Unlock()
-	e := EventObject{
+	e := MessageObj{
 		Err: TransactionTimeOutErr,
 	}
 	// return transactions

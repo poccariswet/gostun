@@ -20,12 +20,12 @@ func main() {
 
 	m := gostun.MessageBuild(gostun.TransactionID, gostun.BindingRequest)
 
-	f := func(event gostun.EventObject) {
+	f := func(msg gostun.MessageObj) {
 		var addr gostun.XORMappedAddr
-		if event.Err != nil {
+		if msg.Err != nil {
 			log.Fatal(err)
 		}
-		if err := addr.GetXORMapped(event.Msg); err != nil {
+		if err := addr.GetXORMapped(msg.Msg); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println(addr)
