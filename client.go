@@ -49,7 +49,7 @@ func NewClient(conn net.Conn) (*Client, error) {
 
 	c.wg.Add(2)
 	go c.readDecode()
-	go c.collectUntil()
+	go c.timeoutntil()
 
 	return c, nil
 }
@@ -70,7 +70,7 @@ func (c *Client) readDecode() {
 	}
 }
 
-func (c *Client) collectUntil() {
+func (c *Client) timeoutUntil() {
 	t := time.NewTicker(c.TimeoutRate)
 	defer c.wg.Done()
 	for {
