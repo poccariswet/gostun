@@ -49,7 +49,7 @@ func NewClient(conn net.Conn) (*Client, error) {
 
 	c.wg.Add(2)
 	go c.readDecode()
-	go c.timeoutntil()
+	go c.timeoutUntil()
 
 	return c, nil
 }

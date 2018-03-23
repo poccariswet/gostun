@@ -88,6 +88,7 @@ next transaction to the same server (based on equality of IP
 address).
 */
 
+//timeout したときに作動
 func (a *Agent) TimeOutHandle(trate time.Time) error {
 	call := make([]Handler, 0, 100)
 	remove := make([]transactionID, 0, 100)
