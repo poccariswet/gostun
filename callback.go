@@ -11,7 +11,7 @@ import (
 type CallbackHandle struct {
 	Cond     *sync.Cond
 	process  bool
-	callback func(e EventObject)
+	callback func(e MessageObj)
 }
 
 var callbackPool = sync.Pool{
@@ -27,7 +27,7 @@ func (c *CallbackHandle) Reset() {
 	c.callback = nil
 }
 
-func (c *CallbackHandle) HandleEvent(e EventObject) {
+func (c *CallbackHandle) HandleEvent(e MessageObj) {
 	if c.callback == nil {
 		log.Fatal("callback is nil")
 	}
@@ -91,7 +91,7 @@ func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	return nil
 }
 
-func (c *Client) Call(m *Message, h func(EventObject), rto time.Time) error {
+func (c *Client) Call(m *Message, h func(MessageObj), rto time.Time) error {
 	f := callbackPool.Get().(*CallbackHandle)
 	f.callback = h
 

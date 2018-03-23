@@ -16,15 +16,15 @@ const (
 
 type MessageClass byte
 
-type Method uint16
-
 // class
 const (
-	Request         MessageClass = 0x00 // 0b00
-	Indication      MessageClass = 0x01 // 0b01
-	SuccessResponse MessageClass = 0x02 // 0b10
-	ErrorResponse   MessageClass = 0x03 // 0b11
+	Request         MessageClass = 0x00
+	Indication      MessageClass = 0x01
+	SuccessResponse MessageClass = 0x02
+	ErrorResponse   MessageClass = 0x03
 )
+
+type Method uint16
 
 // method
 const (
@@ -44,14 +44,6 @@ type MessageType struct {
 	Class  MessageClass // request
 }
 
-//reutn new message type has Method and Class
-func NewMessageType(m Method, c MessageClass) MessageType {
-	return MessageType{
-		Method: m,
-		Class:  c,
-	}
-}
-
 // stun message type
 type Message struct {
 	Raw           []byte //full message
@@ -59,6 +51,14 @@ type Message struct {
 	Length        uint32
 	TransactionID [TransactionIDSize]byte
 	Attributes    Attributes
+}
+
+//reutn new message type has Method and Class
+func NewMessageType(m Method, c MessageClass) MessageType {
+	return MessageType{
+		Method: m,
+		Class:  c,
+	}
 }
 
 func (m *Message) ReadConn(r io.Reader) (int, error) {
@@ -108,37 +108,10 @@ func (m *Message) Decode() error {
 	m.Type.DecodeMessageType(mtype)                   // copy STUN message type
 	m.Length = uint32(mlength)                        // copy STUN message type
 	copy(m.TransactionID[:], header[8:messageHeader]) // copy STUN Transaction ID (96 bits|12 byte)
-
-	m.Attributes = m.Attributes[:0]
-	buf := header[messageHeader:fullHeader]
-	attrsize := 0 // initialize
-
-	for attrsize < int(mlength) {
-		// github.com/soeyusuke/note/stun => STUN Attributes
-		attr := AttributeField{
-			Type:   AttributeType(binary.BigEndian.Uint16(buf[0:2])), //Attribute type - first 2byte
-			Length: binary.BigEndian.Uint16(buf[2:4]),                // Attributes Length - next 2byte
-		}
-
-		if len(buf) < attributeHeader {
-			err := fmt.Sprintf("buf(%d) is less than attributeHeader(%d)", len(buf), attributeHeader)
-			return errors.New(err)
-		}
-
-		alen := attr.PaddingValue() // padding
-		attrsize += attributeHeader // increment attrsize 4byte(type + length)
-		buf = buf[attributeHeader:] // adjust buf to Value
-		if len(buf) < alen {
-			err := fmt.Sprintf("buf length(%d) is less than value size is expected(%d)", len(buf), alen)
-			return errors.New(err)
-		}
-
-		attr.Value = buf[:int(attr.Length)]
-		attrsize += alen // increment attrsize Value size
-		buf = buf[alen:] // adjust buf Attribute Field
-
-		m.Attributes = append(m.Attributes, attr)
+	if err := m.AttrDecode(header[messageHeader:fullHeader], int(mlength)); err != nil {
+		return err
 	}
+
 	return nil
 }
 
@@ -181,4 +154,37 @@ func (mt *MessageType) DecodeMessageType(v uint16) {
 
 	m := m0m3 + m4m6 + m7m11
 	mt.Method = Method(m)
+}
+
+// Attribute decode
+func (m *Message) AttrDecode(buf []byte, l int) error {
+	m.Attributes = m.Attributes[:0]
+	attrsize := 0 // initialize
+
+	for attrsize < l {
+		attr := AttributeField{
+			Type:   AttributeType(binary.BigEndian.Uint16(buf[0:2])), //Attribute type - first 2byte
+			Length: binary.BigEndian.Uint16(buf[2:4]),                // Attributes Length - next 2byte
+		}
+
+		if len(buf) < attributeHeader {
+			err := fmt.Sprintf("buf(%d) is less than attributeHeader(%d)", len(buf), attributeHeader)
+			return errors.New(err)
+		}
+
+		alen := attr.PaddingValue() // padding
+		attrsize += attributeHeader // increment attrsize 4byte(type + length)
+		buf = buf[attributeHeader:] // adjust 4 byte buf to Value
+		if len(buf) < alen {
+			err := fmt.Sprintf("buf length(%d) is less than value size is expected(%d)", len(buf), alen)
+			return errors.New(err)
+		}
+
+		attr.Value = buf[:int(attr.Length)]
+		attrsize += alen // increment attrsize Value size
+		buf = buf[alen:] // adjust buf Attribute Field
+
+		m.Attributes = append(m.Attributes, attr)
+	}
+	return nil
 }
