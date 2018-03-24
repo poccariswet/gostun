@@ -13,12 +13,12 @@ type Client struct {
 	TimeoutRate time.Duration
 	wg          sync.WaitGroup
 	close       chan struct{}
-	agent       messageClient
+	agent       Handle
 	rw          sync.RWMutex
 	clientclose bool
 }
 
-type messageClient interface {
+type Handle interface {
 	ProcessHandle(*Message) error
 	TimeOutHandle(time.Time) error
 	TransactionHandle([TransactionIDSize]byte, Handler, time.Time) error
