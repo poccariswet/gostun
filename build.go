@@ -85,7 +85,7 @@ func (m *Message) WriteMagicCookie() {
 }
 
 func (m *Message) WriteTransactionID() {
-	copy(m.Raw[8:messageHeader], m.TransactionID[:])
+	copy(m.Raw[8:messageHeader], m.TransactionID[:]) // build and decode message
 }
 
 func (m *Message) build(s ...MsgSetter) error {

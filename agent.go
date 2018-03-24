@@ -32,12 +32,6 @@ type Handler interface {
 	HandleEvent(e MessageObj)
 }
 
-type HandleFunc func(e EventObject)
-
-func (f HandleFunc) HandleEvent(e EventObject) {
-	f(e)
-}
-
 type MessageObj struct {
 	Msg *Message
 	Err error
@@ -63,7 +57,7 @@ func (a *Agent) ProcessHandle(m *Message) error {
 	a.mux.Unlock()
 
 	if ok {
-		tr.handler.HandleEvent(e) // HandleEvent cast the e to hander type
+		tr.handler.HandleEvent(e) // HandleEvent implement
 	} else if a.nonHandler != nil {
 		a.nonHandler.HandleEvent(e) // the transaction is not registered
 	}

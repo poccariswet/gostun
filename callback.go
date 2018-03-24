@@ -31,6 +31,7 @@ func (c *CallbackHandle) HandleEvent(e MessageObj) {
 	if c.callback == nil {
 		log.Fatal("callback is nil")
 	}
+	// implement f Handler
 	c.callback(e)
 	c.Cond.L.Lock()
 	c.process = true
