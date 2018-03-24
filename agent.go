@@ -32,11 +32,11 @@ type Handler interface {
 	HandleEvent(e MessageObj)
 }
 
-// type HandleFunc func(e EventObject)
+type HandleFunc func(e EventObject)
 
-// func (f HandleFunc) HandleEvent(e EventObject) {
-// 	f(e)
-// }
+func (f HandleFunc) HandleEvent(e EventObject) {
+	f(e)
+}
 
 type MessageObj struct {
 	Msg *Message
