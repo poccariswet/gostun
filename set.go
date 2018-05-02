@@ -5,16 +5,16 @@ import (
 	"io"
 )
 
-type transactionIDSetter struct{}
+type SetTransaer struct{}
 
-var TransactionID MsgSetter = transactionIDSetter{}
+var TransactionID Transaer = SetTransaer{}
 
 // Sets Message attr
-type MsgSetter interface {
+type Transaer interface {
 	SetTo(m *Message) error
 }
 
-func (transactionIDSetter) SetTo(m *Message) error {
+func (SetTransaer) SetTo(m *Message) error {
 	return m.NewTransaction()
 }
 

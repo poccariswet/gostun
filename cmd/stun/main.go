@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultAddr = "stun.l.google.com:19302"
+	defaultAddr = "stun.l.google.com:19302" //ICE server
 )
 
 func main() {

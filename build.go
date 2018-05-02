@@ -88,7 +88,7 @@ func (m *Message) WriteTransactionID() {
 	copy(m.Raw[8:messageHeader], m.TransactionID[:]) // build and decode message
 }
 
-func (m *Message) build(s ...MsgSetter) error {
+func (m *Message) build(s ...Transaer) error {
 	// make message header
 	m.AllocRaw() // alloc 0, part of message header size
 	m.WriteMessageType()
@@ -106,12 +106,12 @@ func (m *Message) build(s ...MsgSetter) error {
 }
 
 // wraps m.build
-func Build(s ...MsgSetter) (*Message, error) {
+func Build(s ...Transaer) (*Message, error) {
 	m := new(Message)
 	return m, m.build(s...)
 }
 
-func MessageBuild(s ...MsgSetter) *Message {
+func MessageBuild(s ...Transaer) *Message {
 	m, err := Build(s...)
 	if err != nil {
 		log.Fatal(err)
