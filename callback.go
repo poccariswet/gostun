@@ -92,9 +92,18 @@ func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
 	return nil
 }
 
-func (c *Client) Call(m *Message, h func(MessageObj), rto time.Time) error {
+func (c *Client) Call(m *Message, rto time.Time) (*XORMappedAddr ,error) {
+	var addr XORMappedAddr
+
 	f := callbackPool.Get().(*CallbackHandle)
-	f.callback = h
+	f.callback = func(msg MessageObj) {
+		if msg.Err != nil {
+			log.Fatal(msg.Err)
+		}
+		if err := addr.GetXORMapped(msg.Msg); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	defer func() {
 		f.Reset()
@@ -103,11 +112,11 @@ func (c *Client) Call(m *Message, h func(MessageObj), rto time.Time) error {
 
 	// waiting TransactionLaunch until call callback func
 	if err := c.TransactionLaunch(m, f, rto); err != nil {
-		return err
+		return nil, err
 	}
 	f.Wait()
 
-	return nil
+	return &addr, nil
 }
 
 // write the m.Raw=request to conn
