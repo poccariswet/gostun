@@ -70,14 +70,6 @@ func (a *Agent) TransactionHandle(id [TransactionIDSize]byte, h Handler, rto tim
 }
 
 func (c *Client) TransactionLaunch(m *Message, h Handler, rto time.Time) error {
-	c.rw.RLock()
-	closed := c.clientclose
-	c.rw.RUnlock()
-
-	if closed {
-		return errors.New("client closed")
-	}
-
 	if h != nil {
 		if err := c.agent.TransactionHandle(m.TransactionID, h, rto); err != nil {
 			return err

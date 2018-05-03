@@ -14,8 +14,6 @@ type Client struct {
 	wg          sync.WaitGroup
 	close       chan struct{}
 	agent       Handle
-	rw          sync.RWMutex
-	clientclose bool
 }
 
 type Handle interface {
@@ -48,7 +46,7 @@ func NewClient(conn net.Conn) (*Client, error) {
 	}
 
 	c.wg.Add(2)
-	go c.readDecode()
+	go c.readDecode() // Decode Message
 	go c.timeoutUntil()
 
 	return c, nil
@@ -71,7 +69,7 @@ func (c *Client) readDecode() {
 }
 
 func (c *Client) timeoutUntil() {
-	t := time.NewTicker(c.TimeoutRate)
+	t := time.NewTicker(c.TimeoutRate) // rto
 	defer c.wg.Done()
 	for {
 		select {

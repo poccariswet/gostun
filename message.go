@@ -14,6 +14,19 @@ const (
 	attributeHeader   = 4 // type and length
 )
 
+const (
+	bitc0   = 0x1
+	bitc1   = 0x2
+	shiftc0 = 4
+	shiftc1 = 7
+
+	methodshift1 = 1
+	methodshift2 = 2
+	mbit1        = 0xf   //M0~M3=>0b0000000000001111
+	mbit2        = 0x70  //M4~M6=>0b0000000001110000
+	mbit3        = 0xf80 //M7~M11=>0b00011111000000
+)
+
 type MessageClass byte
 
 // class
@@ -115,19 +128,6 @@ func (m *Message) Decode() error {
 	return nil
 }
 
-const (
-	bitc0   = 0x1
-	bitc1   = 0x2
-	shiftc0 = 4
-	shiftc1 = 7
-
-	methodshift1 = 1
-	methodshift2 = 2
-	mbit1        = 0xf   //M0~M3=>0b0000000000001111
-	mbit2        = 0x70  //M4~M6=>0b0000000001110000
-	mbit3        = 0xf80 //M7~M11=>0b00011111000000
-)
-
 /*
     0                 1
     2  3  4 5 6 7 8 9 0 1 2 3 4 5
@@ -140,6 +140,7 @@ const (
    Format of STUN Message Type Field
 */
 
+// Decode according Format of STUN message type field
 func (mt *MessageType) DecodeMessageType(v uint16) {
 	// difine class
 	c0 := (v >> shiftc0) & bitc0

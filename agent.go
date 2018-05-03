@@ -6,6 +6,17 @@ import (
 	"time"
 )
 
+/*
+すべてのハンドラがTransactionTimeOutErrを処理するまで、
+指定された時刻より前にデッドラインを持つすべてのトランザクションをblockする。
+エージェントが既に閉じられている場合、ErrAgentを返す
+*/
+
+var (
+	ErrAgent              = errors.New("agent closed")
+	TransactionTimeOutErr = errors.New("transaction is timed out")
+)
+
 // process of transaction in message
 type Agent struct {
 	transactions map[transactionID]TransactionAgent
@@ -51,10 +62,8 @@ func (a *Agent) ProcessHandle(m *Message) error {
 		Msg: m,
 	}
 
-	a.mux.Lock() // protect to do multiple access to transaction
 	tr, ok := a.transactions[m.TransactionID]
 	delete(a.transactions, m.TransactionID) //delete maps entry
-	a.mux.Unlock()
 
 	if ok {
 		tr.handler.HandleEvent(e) // HandleEvent implement
@@ -63,17 +72,6 @@ func (a *Agent) ProcessHandle(m *Message) error {
 	}
 	return nil
 }
-
-/*
-すべてのハンドラがTransactionTimeOutErrを処理するまで、
-指定された時刻より前にデッドラインを持つすべてのトランザクションをblockする。
-エージェントが既に閉じられている場合、ErrAgentを返す
-*/
-
-var (
-	ErrAgent              = errors.New("agent closed")
-	TransactionTimeOutErr = errors.New("transaction is timed out")
-)
 
 /*
 The value for RTO SHOULD be cached by a client after the completion

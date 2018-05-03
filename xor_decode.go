@@ -114,6 +114,7 @@ func (addr *XORMappedAddr) DecodexorAddr(m *Message, attrtype AttributeType) err
 	return nil
 }
 
+// xor addr
 func (addr *XORMappedAddr) XorAddr(value, buf []byte) {
 	//port
 	mscookie := magicCookie >> 16
